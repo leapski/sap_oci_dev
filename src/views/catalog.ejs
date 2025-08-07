@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalog</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet" />
+ 
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #f7f8fa;
+      margin: 0;
+      padding: 0;
+      color: #222;
+    }
+    header {
+      background: #2d3e50;
+      color: #fff;
+      padding: 24px 0 16px 0;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .catalog-container {
+      max-width: 1100px;
+      margin: 32px auto 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+    }
+    .product {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 20px 18px 18px 18px;
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow 0.2s, transform 0.2s;
+      position: relative;
+    }
+    .product:hover {
+      box-shadow: 0 6px 24px rgba(44,62,80,0.13);
+      transform: translateY(-4px) scale(1.03);
+    }
+    .product b {
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+      display: block;
+      color: #2d3e50;
+    }
+    .product-details {
+      font-size: 0.97rem;
+      margin-bottom: 10px;
+      color: #444;
+      text-align: center;
+    }
+    .add-cart-btn {
+      background: black;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px #000;
+    }
+    .add-cart-btn:hover {
+      box-shadow: 0 4px 16px #ccc;
+    }
+    .pagination {
+      margin: 36px 0 24px 0;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+    .pagination a {
+      margin: 0 8px;
+      text-decoration: none;
+      color: #2d8cf0;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 5px;
+      transition: background 0.15s;
+    }
+    .pagination a:hover {
+      background: #eaf6ff;
+    }
+    footer {
+      text-align: center;
+      color: #888;
+      font-size: 0.98rem;
+      margin: 40px 0 18px 0;
+    }
+    @media (max-width: 700px) {
+      .catalog-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .product {
+        width: 90vw;
+        max-width: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OCI PunchOut Catalog</h1>
+  </header>
+
+  <form id="oci-cart-form" method="POST" action="<%= hookUrl %>" target="_blank">
+    <div class="catalog-container">
+      <% products.forEach(function(product, idx) { %>
+        <div class="product">
+          <b><%= product.name %></b>
+          <div class="product-details">
+            Price: <%= product.price %> <%= product.currency %><br/>
+            Part #: <%= product.partNumber %><br/>
+            Vendor: <%= product.vendor %>
+          </div>
+          <label>
+            <input type="checkbox" name="selected" value="<%= idx %>" />
+            Add to cart
+          </label>
+          <input type="hidden" name="name_<%= idx %>" value="<%= product.name %>" />
+          <input type="hidden" name="price_<%= idx %>" value="<%= product.price %>" />
+          <input type="hidden" name="currency_<%= idx %>" value="<%= product.currency %>" />
+          <input type="hidden" name="vendor_<%= idx %>" value="<%= product.vendor %>" />
+          <input type="hidden" name="partNumber_<%= idx %>" value="<%= product.partNumber %>" />
+        </div>
+      <% }); %>
+    </div>
+
+    <input type="hidden" name="itemCount" value="<%= products.length %>" />
+    <div style="text-align: center; margin-top: 20px;">
+      <button type="button" class="add-cart-btn" onclick="submitOCI()">Submit Cart</button>
+    </div>
+  </form>
+
+  <div class="pagination">
+    <% if (page > 1) { %>
+      <a href="?token=<%= token %>&page=<%= page - 1 %>">&laquo; Prev</a>
+    <% } %>
+    Page <%= page %> of <%= totalPages %>
+    <% if (page < totalPages) { %>
+      <a href="?token=<%= token %>&page=<%= page + 1 %>">Next &raquo;</a>
+    <% } %>
+  </div>
+
+  <script>
+    function submitOCI() {
+      const form = document.getElementById('oci-cart-form');
+      const selected = Array.from(form.querySelectorAll('input[name="selected"]:checked'));
+
+      // Clear old dynamic OCI fields
+      form.querySelectorAll('.oci-field').forEach(el => el.remove());
+
+      selected.forEach((checkbox, index) => {
+        const idx = checkbox.value;
+        const fields = {
+          [`NEW_ITEM-DESCRIPTION[${index + 1}]`]: form[`name_${idx}`].value,
+          [`NEW_ITEM-PRICE[${index + 1}]`]: form[`price_${idx}`].value,
+          [`NEW_ITEM-CURRENCY[${index + 1}]`]: form[`currency_${idx}`].value,
+          [`NEW_ITEM-QUANTITY[${index + 1}]`]: 1,
+          [`NEW_ITEM-UNIT[${index + 1}]`]: 'EA',
+          [`NEW_ITEM-VENDORMAT[${index + 1}]`]: form[`partNumber_${idx}`].value,
+          [`NEW_ITEM-VENDOR[${index + 1}]`]: form[`vendor_${idx}`].value
+        };
+
+        for (const [name, value] of Object.entries(fields)) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = value;
+          input.className = 'oci-field';
+          form.appendChild(input);
+        }
+      });
+
+      form.submit();
+    }
+  </script>
+</body>
+</html>

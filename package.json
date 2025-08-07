@@ -1,0 +1,27 @@
+{
+  "name": "oci-punchout-sap-2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "dotenv": "^17.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "serverless-http": "^3.2.0",
+    "sqlite3": "^5.1.7"
+  },
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
