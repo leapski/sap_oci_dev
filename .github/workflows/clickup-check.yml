@@ -1,0 +1,64 @@
+name: Check for ClickUp Task ID
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  clickup_task_check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Extract Task IDs from PR body and title
+      id: extract_task_ids
+      run: |
+        # Get PR data
+        PR_DATA=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }})
+        
+        PR_BODY=$(echo "$PR_DATA" | jq -r '.body')
+        PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+
+        if [ -z "$PR_BODY" ] && [ -z "$PR_TITLE" ]; then
+          echo "Pull request body and title are both empty." >&2
+          exit 1
+        fi
+
+        # Extract task IDs from body and title
+        BODY_TASK_IDS=$(echo "$PR_BODY" | grep -oP '(?<=CU-)[a-zA-Z0-9]+|(?<=https://app\.clickup\.com/t/)[a-zA-Z0-9]+' || true)
+        TITLE_TASK_IDS=$(echo "$PR_TITLE" | grep -oP '(?<=CU-|#)[a-zA-Z0-9]+' || true)
+
+        # Combine and deduplicate task IDs
+        ALL_TASK_IDS=$(echo -e "$BODY_TASK_IDS\n$TITLE_TASK_IDS" | sort -u | sed '/^$/d')
+
+        if [ -z "$ALL_TASK_IDS" ]; then
+          echo "No ClickUp Task IDs found in PR title or body." >&2
+          exit 1
+        fi
+        
+        echo "task_ids<<EOF" >> $GITHUB_OUTPUT
+        echo "$ALL_TASK_IDS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Validate Tasks in ClickUp
+      run: |
+        TASK_IDS="${{ steps.extract_task_ids.outputs.task_ids }}"
+        INVALID_IDS=()
+
+        for TASK_ID in $(echo "$TASK_IDS" | sort -u); do
+          RESPONSE=$(curl -s -H "Authorization: ${{ secrets.CLICK_UP_API_TOKEN }}" \
+                      -H "Content-Type: application/json" \
+                      "https://api.clickup.com/api/v2/task/$TASK_ID")
+          
+          if echo "$RESPONSE" | jq -e --arg task_id "$TASK_ID" '.id == $task_id' > /dev/null; then
+            echo "✅ Valid ClickUp Task ID found: $TASK_ID"
+          else
+            echo "❌ Invalid ClickUp Task ID: $TASK_ID" >&2
+            INVALID_IDS+=("$TASK_ID")
+          fi
+        done
+
+        if [ ${#INVALID_IDS[@]} -ne 0 ]; then
+          echo "🚫 The following Task IDs are invalid: ${INVALID_IDS[*]}" >&2
+          exit 1
+        fi
