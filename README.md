@@ -5,7 +5,7 @@
    ```sh
    npm install
    ```
-2. Create a `.env` file:
+2. Create a `.env` file from the `.env.example`:
    ```env
    JWT_SECRET=dev_secret
    PORT=3000
