@@ -5,84 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catalog</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet" />
- 
+
   <style>
     body {
       font-family: 'Roboto', Arial, sans-serif;
-      background: #f7f8fa;
+      background: linear-gradient(to bottom, #f9fafc, #eef1f5);
       margin: 0;
       padding: 0;
       color: #222;
     }
     header {
-      background: #2d3e50;
+      background: linear-gradient(135deg, #2d3e50, #1a252f);
       color: #fff;
       padding: 24px 0 16px 0;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     h1 {
       margin: 0;
-      font-size: 2.2rem;
+      font-size: 2.4rem;
       font-weight: 700;
       letter-spacing: 1px;
     }
     .catalog-container {
-      max-width: 1100px;
-      margin: 32px auto 0 auto;
+      max-width: 1200px;
+      margin: 40px auto;
       display: flex;
       flex-wrap: wrap;
-      gap: 24px;
+      gap: 28px;
       justify-content: center;
     }
     .product {
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      padding: 20px 18px 18px 18px;
-      width: 220px;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      padding: 20px 18px 22px 18px;
+      width: 240px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: box-shadow 0.2s, transform 0.2s;
+      transition: all 0.3s ease;
       position: relative;
+      overflow: hidden;
     }
     .product:hover {
-      box-shadow: 0 6px 24px rgba(44,62,80,0.13);
-      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 8px 28px rgba(44,62,80,0.15);
+      transform: translateY(-6px) scale(1.04);
     }
     .product b {
-      font-size: 1.1rem;
-      margin-bottom: 6px;
+      font-size: 1.15rem;
+      margin-bottom: 10px;
       display: block;
       color: #2d3e50;
-    }
-    .product-details {
-      font-size: 0.97rem;
-      margin-bottom: 10px;
-      color: #444;
       text-align: center;
     }
+    .product-details {
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+      color: #555;
+      text-align: center;
+      line-height: 1.4;
+    }
+    label {
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      accent-color: #2d8cf0;
+      width: 18px;
+      height: 18px;
+    }
     .add-cart-btn {
-      background: black;
+      background: linear-gradient(135deg, #2d8cf0, #0072ce);
       color: #fff;
       border: none;
-      border-radius: 6px;
-      padding: 10px 22px;
-      font-size: 1rem;
+      border-radius: 8px;
+      padding: 12px 26px;
+      font-size: 1.05rem;
       font-weight: 600;
       cursor: pointer;
       margin-top: 8px;
-      transition: background 0.2s, box-shadow 0.2s;
-      box-shadow: 0 2px 8px #000;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 14px rgba(0,114,206,0.3);
     }
     .add-cart-btn:hover {
-      box-shadow: 0 4px 16px #ccc;
+      box-shadow: 0 6px 18px rgba(0,114,206,0.4);
+      transform: translateY(-2px);
     }
     .pagination {
       margin: 36px 0 24px 0;
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
     }
     .pagination a {
       margin: 0 8px;
@@ -90,30 +108,32 @@
       color: #2d8cf0;
       font-weight: 600;
       padding: 6px 14px;
-      border-radius: 5px;
-      transition: background 0.15s;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
     }
     .pagination a:hover {
-      background: #eaf6ff;
+      background: #2d8cf0;
+      color: #fff;
     }
     footer {
       text-align: center;
       color: #888;
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       margin: 40px 0 18px 0;
     }
     @media (max-width: 700px) {
       .catalog-container {
         flex-direction: column;
         align-items: center;
-        gap: 18px;
+        gap: 20px;
       }
       .product {
         width: 90vw;
-        max-width: 340px;
+        max-width: 360px;
       }
     }
   </style>
+  
 </head>
 <body>
   <header>
@@ -126,19 +146,20 @@
         <div class="product">
           <b><%= product.name %></b>
           <div class="product-details">
-            Price: <%= product.price %> <%= product.currency %><br/>
-            Part #: <%= product.partNumber %><br/>
-            Vendor: <%= product.vendor %>
+            Price: <%= product.netRetailPrice?.amount || 0 %> <%= product.netRetailPrice?.currency || '' %><br/>
+            Part #: <%= product.merchantSku %><br/>
+            Vendor: <%= product.productGroup %>
           </div>
           <label>
             <input type="checkbox" name="selected" value="<%= idx %>" />
             Add to cart
           </label>
+
           <input type="hidden" name="name_<%= idx %>" value="<%= product.name %>" />
-          <input type="hidden" name="price_<%= idx %>" value="<%= product.price %>" />
-          <input type="hidden" name="currency_<%= idx %>" value="<%= product.currency %>" />
-          <input type="hidden" name="vendor_<%= idx %>" value="<%= product.vendor %>" />
-          <input type="hidden" name="partNumber_<%= idx %>" value="<%= product.partNumber %>" />
+          <input type="hidden" name="price_<%= idx %>" value="<%= product.netRetailPrice?.amount || 0 %>" />
+          <input type="hidden" name="currency_<%= idx %>" value="<%= product.netRetailPrice?.currency || '' %>" />
+          <input type="hidden" name="vendor_<%= idx %>" value="<%= product.productGroup %>" />
+          <input type="hidden" name="partNumber_<%= idx %>" value="<%= product.merchantSku %>" />         
         </div>
       <% }); %>
     </div>

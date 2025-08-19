@@ -4,11 +4,16 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const sequelize = require('./services/db');
 
+const punchoutPageRouter = require('./routes/punchoutPage');
 const punchoutRoutes = require('./routes/punchout');
 const catalogRoutes = require('./routes/catalog');
+const productsRoutes = require('./routes/products');
 
 const app = express();
+
+const PORT = process.env.PORT || 3000;
 
 // Trust proxy for rate limiting behind load balancers
 app.set('trust proxy', 1);
@@ -29,8 +34,10 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
+app.use('/punchout-test', punchoutPageRouter); // punchout page test route
 app.use('/functions', punchoutRoutes);
 app.use('/functions', catalogRoutes);
+app.use('/api', productsRoutes);
 
 app.post('/hook', (req, res) => {
   res.send(`<pre>${JSON.stringify(req.body, null, 2)}</pre>`);
@@ -50,7 +57,9 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
-const PORT = process.env.PORT || 3000;
+sequelize.authenticate()
+  .then(() => console.log('Connected to Databae'))
+  .catch(err => console.error('Unable to connect to Database:', err));
 
 app.listen(PORT, () => console.log(`Server ready on port ${PORT}.`));
 
